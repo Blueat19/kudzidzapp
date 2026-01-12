@@ -1,0 +1,119 @@
+================================================================================
+CPANEL DEPLOYMENT - QUICK START GUIDE
+================================================================================
+Tanga Kudzidza App | SCW Digital | +263 78 709 0543
+================================================================================
+
+STEP 1: PREPARE FILES LOCALLY
+-----------------------------
+# Build frontend
+cd frontend
+yarn install
+npx expo export --platform web
+# Creates 'dist' folder with all frontend files
+
+
+STEP 2: SETUP MONGODB (Use MongoDB Atlas - FREE)
+------------------------------------------------
+1. Go to: https://www.mongodb.com/atlas
+2. Create free account & cluster
+3. Get connection string like: mongodb+srv://user:pass@cluster.mongodb.net/tangakudzidza
+4. Add 0.0.0.0/0 to IP whitelist (Network Access)
+
+
+STEP 3: DEPLOY BACKEND TO CPANEL
+--------------------------------
+1. Login to cPanel: https://yourdomain.com:2083
+
+2. Go to "Setup Python App" > Create Application:
+   - Python: 3.9 or 3.10
+   - Application root: tangakudzidza_api
+   - Application URL: yourdomain.com/api
+   - Startup file: passenger_wsgi.py
+   - Entry point: application
+
+3. Upload these files to tangakudzidza_api folder:
+   - server.py
+   - requirements.txt
+   - passenger_wsgi.py (create this - see below)
+   - .env (with your MONGO_URL)
+
+4. Create passenger_wsgi.py:
+   ---------------------------
+   import sys, os
+   sys.path.insert(0, os.path.dirname(__file__))
+   from server import app as application
+   ---------------------------
+
+5. Create .env file:
+   ---------------------------
+   MONGO_URL=mongodb+srv://user:pass@cluster.mongodb.net/tangakudzidza
+   ---------------------------
+
+6. Install dependencies via Terminal:
+   source /home/USERNAME/virtualenv/tangakudzidza_api/3.9/bin/activate
+   pip install -r requirements.txt
+
+7. Click "RESTART" in Setup Python App
+
+
+STEP 4: DEPLOY FRONTEND TO CPANEL
+---------------------------------
+1. Go to File Manager > public_html
+
+2. Upload ALL contents of 'dist' folder:
+   - index.html
+   - _expo/ folder
+   - assets/ folder
+
+3. Create .htaccess file in public_html:
+   ---------------------------
+   <IfModule mod_rewrite.c>
+     RewriteEngine On
+     RewriteBase /
+     RewriteCond %{REQUEST_FILENAME} !-f
+     RewriteCond %{REQUEST_FILENAME} !-d
+     RewriteRule ^ index.html [L]
+   </IfModule>
+   ---------------------------
+
+
+STEP 5: SETUP SSL (HTTPS)
+-------------------------
+1. cPanel > SSL/TLS Status > Run AutoSSL
+2. Wait 5-10 minutes
+3. Visit https://yourdomain.com
+
+
+STEP 6: TEST
+------------
+Frontend: https://yourdomain.com
+Backend:  https://yourdomain.com/api/health
+
+
+TROUBLESHOOTING
+---------------
+500 Error: Check stderr.log in tangakudzidza_api folder
+404 Error: Check .htaccess file exists
+CORS Error: Restart backend after adding your domain to CORS
+
+
+================================================================================
+FILE STRUCTURE ON CPANEL
+================================================================================
+
+/home/username/
+├── public_html/              <- FRONTEND FILES GO HERE
+│   ├── index.html
+│   ├── _expo/
+│   ├── assets/
+│   └── .htaccess
+│
+└── tangakudzidza_api/        <- BACKEND FILES GO HERE
+    ├── server.py
+    ├── requirements.txt
+    ├── passenger_wsgi.py
+    ├── .env
+    └── stderr.log (auto-created)
+
+================================================================================
