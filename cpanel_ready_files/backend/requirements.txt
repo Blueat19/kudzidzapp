@@ -1,0 +1,10 @@
+# FastAPI Backend Dependencies for cPanel Deployment
+# Install with: pip install -r requirements.txt
+
+fastapi==0.104.1
+uvicorn==0.24.0
+python-dotenv==1.0.0
+pymongo==4.6.1
+motor==3.3.2
+python-multipart==0.0.6
+asgiref==3.7.2
