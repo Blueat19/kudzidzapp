@@ -1,0 +1,610 @@
+================================================================================
+COMPLETE CPANEL DEPLOYMENT GUIDE
+================================================================================
+Tanga Kudzidza / Start Learning App
+FastAPI Backend + React Frontend + MongoDB
+--------------------------------------------------------------------------------
+Developer: SCW Digital | Contact: +263 78 709 0543
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1. Prerequisites & Requirements
+2. Preparing Your Files for Upload
+3. MongoDB Setup Options
+4. Backend (FastAPI) Deployment to cPanel
+5. Frontend (React/Expo Web) Deployment to cPanel
+6. Connecting Frontend to Backend
+7. Domain & SSL Configuration
+8. Troubleshooting Common Issues
+9. Maintenance & Updates
+
+================================================================================
+SECTION 1: PREREQUISITES & REQUIREMENTS
+================================================================================
+
+Before starting, ensure you have:
+
+[ ] cPanel hosting account with:
+    - SSH access (recommended)
+    - Python support (Python 3.8+ via Setup Python App)
+    - Node.js support (for building React)
+    - File Manager access
+    - MySQL/MongoDB access OR external MongoDB
+
+[ ] Local development tools:
+    - Node.js 18+ installed
+    - Python 3.8+ installed
+    - Git (optional but recommended)
+
+[ ] Account credentials:
+    - cPanel username and password
+    - cPanel URL (e.g., https://yourdomain.com:2083)
+    - FTP/SFTP credentials (if using FTP upload)
+
+================================================================================
+SECTION 2: PREPARING YOUR FILES FOR UPLOAD
+================================================================================
+
+STEP 2.1: BUILD THE REACT/EXPO FRONTEND
+---------------------------------------
+
+On your local computer, open terminal/command prompt:
+
+    cd frontend
+    
+    # Install dependencies (if not already done)
+    yarn install
+    
+    # Build for web deployment
+    npx expo export --platform web
+    
+    # This creates a 'dist' folder with all static files
+
+The 'dist' folder contains:
+    - index.html
+    - _expo/ folder (JavaScript bundles)
+    - assets/ folder (images, fonts)
+
+STEP 2.2: PREPARE THE BACKEND FILES
+-----------------------------------
+
+Create a deployment folder with these files from /backend:
+
+    backend/
+    ├── server.py              (main FastAPI application)
+    ├── requirements.txt       (Python dependencies)
+    ├── .env                   (environment variables - create new for production)
+    └── passenger_wsgi.py      (NEW - required for cPanel)
+
+Create passenger_wsgi.py file with this content:
+
+    ---------------- START OF FILE ----------------
+    import sys
+    import os
+    
+    # Add the app directory to the path
+    sys.path.insert(0, os.path.dirname(__file__))
+    
+    # Import the FastAPI app
+    from server import app
+    
+    # Create WSGI application
+    from a]syncio import create_app
+    application = create_app(app)
+    ---------------- END OF FILE ----------------
+
+Alternative passenger_wsgi.py (simpler version):
+
+    ---------------- START OF FILE ----------------
+    import os
+    import sys
+    
+    sys.path.insert(0, os.path.dirname(__file__))
+    
+    from server import app as application
+    ---------------- END OF FILE ----------------
+
+================================================================================
+SECTION 3: MONGODB SETUP OPTIONS
+================================================================================
+
+OPTION A: MongoDB Atlas (RECOMMENDED - Free Tier Available)
+-----------------------------------------------------------
+
+1. Go to https://www.mongodb.com/atlas
+2. Create free account
+3. Create a new cluster (free tier - M0 Sandbox)
+4. Click "Connect" > "Connect your application"
+5. Copy the connection string, it looks like:
+   mongodb+srv://username:password@cluster.xxxxx.mongodb.net/dbname
+
+6. Add your cPanel server IP to MongoDB Atlas whitelist:
+   - Go to Network Access > Add IP Address
+   - Add your cPanel server's IP address
+   - Or add 0.0.0.0/0 (allows all - less secure)
+
+7. Update your backend .env file:
+   MONGO_URL=mongodb+srv://username:password@cluster.xxxxx.mongodb.net/tangakudzidza
+
+OPTION B: MongoDB on VPS (If you have VPS access)
+-------------------------------------------------
+
+If your hosting provides MongoDB:
+1. Create database through cPanel > Databases > MongoDB
+2. Note the connection details
+3. Update MONGO_URL in .env
+
+NOTE: Most shared cPanel hosting does NOT support MongoDB natively.
+      MongoDB Atlas (Option A) is strongly recommended.
+
+================================================================================
+SECTION 4: BACKEND (FASTAPI) DEPLOYMENT TO CPANEL
+================================================================================
+
+STEP 4.1: LOGIN TO CPANEL
+-------------------------
+
+1. Open browser and go to: https://yourdomain.com:2083
+   OR https://yourdomain.com/cpanel
+2. Enter your username and password
+3. You'll see the cPanel dashboard
+
+STEP 4.2: CREATE PYTHON APPLICATION
+-----------------------------------
+
+1. In cPanel, search for "Setup Python App" and click it
+2. Click "CREATE APPLICATION"
+3. Fill in the form:
+   
+   - Python version: 3.9 or 3.10 (latest available)
+   - Application root: tangakudzidza_backend
+   - Application URL: api.yourdomain.com OR yourdomain.com/api
+   - Application startup file: passenger_wsgi.py
+   - Application Entry point: application
+   
+4. Click "CREATE"
+5. Note the "Source" path shown (e.g., /home/username/tangakudzidza_backend)
+6. Note the command to enter virtual environment:
+   source /home/username/virtualenv/tangakudzidza_backend/3.9/bin/activate
+
+STEP 4.3: UPLOAD BACKEND FILES
+------------------------------
+
+METHOD A: Using File Manager (Easiest)
+
+1. In cPanel, click "File Manager"
+2. Navigate to: /home/yourusername/tangakudzidza_backend
+3. Click "Upload" button
+4. Upload these files:
+   - server.py
+   - requirements.txt
+   - passenger_wsgi.py
+   - .env (create/edit after upload)
+
+METHOD B: Using FTP (FileZilla)
+
+1. Open FileZilla
+2. Enter credentials:
+   - Host: yourdomain.com
+   - Username: cPanel username
+   - Password: cPanel password
+   - Port: 21
+3. Navigate to /home/yourusername/tangakudzidza_backend
+4. Upload all backend files
+
+METHOD C: Using SSH (Advanced)
+
+1. In cPanel, go to "Terminal" or use SSH client
+2. Commands:
+   
+   cd ~/tangakudzidza_backend
+   
+   # Upload via Git (if your code is on GitHub)
+   git clone https://github.com/yourusername/yourrepo.git .
+   
+   # Or use wget if files are hosted somewhere
+   wget https://yourserver.com/backend.zip
+   unzip backend.zip
+
+STEP 4.4: INSTALL PYTHON DEPENDENCIES
+-------------------------------------
+
+1. In cPanel, go to "Terminal" OR use SSH
+2. Enter the virtual environment:
+   
+   source /home/yourusername/virtualenv/tangakudzidza_backend/3.9/bin/activate
+
+3. Navigate to app directory:
+   
+   cd ~/tangakudzidza_backend
+
+4. Install dependencies:
+   
+   pip install --upgrade pip
+   pip install -r requirements.txt
+
+5. If requirements.txt has issues, install manually:
+   
+   pip install fastapi uvicorn python-dotenv motor pymongo
+
+STEP 4.5: CONFIGURE ENVIRONMENT VARIABLES
+-----------------------------------------
+
+1. In File Manager, navigate to tangakudzidza_backend
+2. Create or edit .env file:
+   
+   Click "New File" > name it ".env"
+   Right-click > Edit > Add:
+   
+   ---------------- .ENV CONTENT ----------------
+   MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/tangakudzidza
+   SECRET_KEY=your-super-secret-key-change-this
+   DEBUG=False
+   ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+   ---------------- END .ENV ----------------
+
+3. Save the file
+
+STEP 4.6: RESTART THE PYTHON APPLICATION
+----------------------------------------
+
+1. Go back to "Setup Python App" in cPanel
+2. Find your application
+3. Click "RESTART" button
+4. Check if status shows "Running"
+
+STEP 4.7: TEST THE BACKEND
+--------------------------
+
+1. Open browser and go to:
+   https://api.yourdomain.com/api/health
+   OR
+   https://yourdomain.com/api/health
+
+2. You should see: {"status": "healthy"} or similar response
+
+3. If error, check:
+   - cPanel > Setup Python App > Click app > View "stderr.log"
+   - Error logs in: /home/username/tangakudzidza_backend/stderr.log
+
+================================================================================
+SECTION 5: FRONTEND (REACT/EXPO WEB) DEPLOYMENT TO CPANEL
+================================================================================
+
+STEP 5.1: BUILD FRONTEND (If not done already)
+----------------------------------------------
+
+On your local computer:
+
+    cd frontend
+    yarn install
+    npx expo export --platform web
+
+This creates the 'dist' folder.
+
+STEP 5.2: UPLOAD FRONTEND FILES
+-------------------------------
+
+METHOD A: Using File Manager
+
+1. In cPanel, click "File Manager"
+2. Navigate to: /home/yourusername/public_html
+   
+   For subdomain (e.g., app.yourdomain.com):
+   Navigate to: /home/yourusername/app.yourdomain.com
+   
+3. Delete default files (index.html, etc.) if present
+4. Click "Upload"
+5. Upload ALL contents of the 'dist' folder:
+   - index.html
+   - _expo/ folder (entire folder)
+   - assets/ folder (entire folder)
+   - Any other files
+
+IMPORTANT: Upload the CONTENTS of dist, not the dist folder itself!
+
+METHOD B: Using FTP (FileZilla)
+
+1. Connect to your server via FTP
+2. Navigate to public_html (or subdomain folder)
+3. Upload all files from dist folder
+
+METHOD C: Compress and Upload (Faster for many files)
+
+1. On local computer, compress the dist folder:
+   - Windows: Right-click dist > Send to > Compressed folder
+   - Mac/Linux: zip -r dist.zip dist/*
+
+2. In cPanel File Manager:
+   - Navigate to public_html
+   - Upload dist.zip
+   - Right-click dist.zip > Extract
+   - Move extracted files to public_html root
+   - Delete dist.zip and empty dist folder
+
+STEP 5.3: CONFIGURE .HTACCESS FOR REACT ROUTING
+-----------------------------------------------
+
+React apps use client-side routing. Create .htaccess file:
+
+1. In File Manager, navigate to public_html
+2. Click "New File" > name it ".htaccess"
+3. Right-click > Edit > Add:
+
+   ---------------- .HTACCESS CONTENT ----------------
+   <IfModule mod_rewrite.c>
+     RewriteEngine On
+     RewriteBase /
+     
+     # Don't rewrite files or directories
+     RewriteCond %{REQUEST_FILENAME} !-f
+     RewriteCond %{REQUEST_FILENAME} !-d
+     
+     # Rewrite everything else to index.html
+     RewriteRule ^ index.html [L]
+   </IfModule>
+   
+   # Enable CORS for API calls
+   <IfModule mod_headers.c>
+     Header set Access-Control-Allow-Origin "*"
+     Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+     Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+   </IfModule>
+   
+   # Cache static assets
+   <IfModule mod_expires.c>
+     ExpiresActive On
+     ExpiresByType image/jpg "access plus 1 year"
+     ExpiresByType image/jpeg "access plus 1 year"
+     ExpiresByType image/png "access plus 1 year"
+     ExpiresByType image/gif "access plus 1 year"
+     ExpiresByType image/svg+xml "access plus 1 year"
+     ExpiresByType text/css "access plus 1 month"
+     ExpiresByType application/javascript "access plus 1 month"
+   </IfModule>
+   ---------------- END .HTACCESS ----------------
+
+4. Save the file
+
+STEP 5.4: TEST THE FRONTEND
+---------------------------
+
+1. Open browser and go to: https://yourdomain.com
+2. You should see the Tanga Kudzidza welcome screen
+3. Test navigation to all pages:
+   - /language
+   - /home
+   - /reading
+   - /writing
+   - /math
+   - /rewards
+
+================================================================================
+SECTION 6: CONNECTING FRONTEND TO BACKEND
+================================================================================
+
+STEP 6.1: UPDATE API URL IN FRONTEND
+------------------------------------
+
+Before building the frontend, update the API URL:
+
+1. In frontend/.env file, set:
+   
+   EXPO_PUBLIC_BACKEND_URL=https://api.yourdomain.com
+   OR
+   EXPO_PUBLIC_BACKEND_URL=https://yourdomain.com/api
+
+2. Rebuild the frontend:
+   
+   npx expo export --platform web
+
+3. Re-upload the new dist folder to cPanel
+
+STEP 6.2: CONFIGURE CORS ON BACKEND
+-----------------------------------
+
+Ensure your server.py has CORS configured:
+
+    from fastapi.middleware.cors import CORSMiddleware
+    
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["https://yourdomain.com", "https://www.yourdomain.com"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+================================================================================
+SECTION 7: DOMAIN & SSL CONFIGURATION
+================================================================================
+
+STEP 7.1: POINT DOMAIN TO CPANEL
+--------------------------------
+
+In your domain registrar (GoDaddy, Namecheap, etc.):
+
+1. Go to DNS settings
+2. Add/Update A Record:
+   - Type: A
+   - Host: @ (or blank)
+   - Value: Your cPanel server IP
+   - TTL: 3600
+
+3. Add CNAME for www:
+   - Type: CNAME
+   - Host: www
+   - Value: yourdomain.com
+   - TTL: 3600
+
+4. For API subdomain:
+   - Type: A
+   - Host: api
+   - Value: Your cPanel server IP
+   - TTL: 3600
+
+Wait 24-48 hours for DNS propagation.
+
+STEP 7.2: INSTALL FREE SSL CERTIFICATE
+--------------------------------------
+
+1. In cPanel, search for "SSL/TLS Status"
+2. Or search for "AutoSSL" or "Let's Encrypt"
+3. Click "Run AutoSSL"
+4. Wait for certificate installation (few minutes)
+5. Verify by visiting https://yourdomain.com
+
+Alternative - Manual Let's Encrypt:
+
+1. In cPanel, go to "SSL/TLS"
+2. Click "Manage SSL Sites"
+3. Or use "Let's Encrypt SSL" if available
+4. Select domain and install
+
+STEP 7.3: FORCE HTTPS REDIRECT
+------------------------------
+
+Add to .htaccess file (at the beginning):
+
+    # Force HTTPS
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+================================================================================
+SECTION 8: TROUBLESHOOTING COMMON ISSUES
+================================================================================
+
+ISSUE: 500 Internal Server Error (Backend)
+------------------------------------------
+1. Check error logs:
+   - cPanel > Setup Python App > Click app > stderr.log
+   - File Manager > tangakudzidza_backend > stderr.log
+   
+2. Common fixes:
+   - Ensure all dependencies installed: pip install -r requirements.txt
+   - Check .env file exists and has correct MONGO_URL
+   - Verify passenger_wsgi.py syntax
+   - Restart Python app
+
+ISSUE: 404 Not Found (Frontend routes)
+--------------------------------------
+1. Check .htaccess file exists in public_html
+2. Verify mod_rewrite is enabled
+3. Check file permissions (644 for files, 755 for folders)
+
+ISSUE: CORS Errors
+------------------
+1. Check browser console for exact error
+2. Verify backend CORS settings include your frontend domain
+3. Add CORS headers in .htaccess
+4. Restart backend application
+
+ISSUE: MongoDB Connection Failed
+--------------------------------
+1. Verify MONGO_URL in .env is correct
+2. Check MongoDB Atlas whitelist includes cPanel server IP
+3. Test connection string locally first
+4. Check for special characters in password (URL encode them)
+
+ISSUE: Static Files Not Loading (CSS, JS)
+-----------------------------------------
+1. Check paths in index.html
+2. Verify all files uploaded correctly
+3. Check file permissions
+4. Clear browser cache
+
+ISSUE: Python App Not Starting
+------------------------------
+1. Check Python version compatibility
+2. Verify virtual environment activated
+3. Check for syntax errors in server.py
+4. Review stderr.log for detailed errors
+
+COMMANDS TO CHECK LOGS (via SSH or Terminal):
+    
+    # View last 100 lines of error log
+    tail -100 ~/tangakudzidza_backend/stderr.log
+    
+    # View Apache error logs
+    tail -100 ~/logs/error.log
+    
+    # Check if Python process is running
+    ps aux | grep python
+
+================================================================================
+SECTION 9: MAINTENANCE & UPDATES
+================================================================================
+
+UPDATING THE FRONTEND
+---------------------
+1. Make changes locally
+2. Build: npx expo export --platform web
+3. Upload new dist folder contents to public_html
+4. Clear browser cache to see changes
+
+UPDATING THE BACKEND
+--------------------
+1. Make changes locally
+2. Upload changed files to tangakudzidza_backend
+3. In cPanel > Setup Python App > Click "RESTART"
+
+UPDATING DEPENDENCIES
+---------------------
+1. SSH or Terminal into server
+2. source /home/username/virtualenv/tangakudzidza_backend/3.9/bin/activate
+3. pip install --upgrade package_name
+4. Restart Python app
+
+BACKING UP YOUR DATA
+--------------------
+1. cPanel > Backup > Download Full Backup
+2. Or use cPanel > File Manager > Select all > Compress > Download
+3. For MongoDB: Use mongodump or MongoDB Atlas backup feature
+
+MONITORING
+----------
+1. cPanel > Metrics > Visitors (traffic)
+2. cPanel > Metrics > Errors (error logs)
+3. MongoDB Atlas > Clusters > Metrics (database)
+
+================================================================================
+QUICK REFERENCE CARD
+================================================================================
+
+URLS:
+- cPanel Login: https://yourdomain.com:2083
+- Frontend: https://yourdomain.com
+- Backend API: https://api.yourdomain.com/api OR https://yourdomain.com/api
+- MongoDB Atlas: https://cloud.mongodb.com
+
+FILE LOCATIONS:
+- Frontend files: /home/username/public_html/
+- Backend files: /home/username/tangakudzidza_backend/
+- Error logs: /home/username/tangakudzidza_backend/stderr.log
+- .htaccess: /home/username/public_html/.htaccess
+
+IMPORTANT FILES:
+- passenger_wsgi.py (backend entry point)
+- .env (environment variables)
+- .htaccess (Apache configuration)
+- requirements.txt (Python dependencies)
+
+RESTART COMMANDS:
+- Backend: cPanel > Setup Python App > RESTART
+- To clear cache: Add ?v=2 to your URL temporarily
+
+================================================================================
+SUPPORT & CONTACT
+================================================================================
+
+App Developer: SCW Digital
+Phone: +263 78 709 0543
+
+For cPanel-specific issues, contact your hosting provider.
+For MongoDB issues, check: https://docs.mongodb.com/
+
+================================================================================
+END OF DEPLOYMENT GUIDE
+================================================================================
