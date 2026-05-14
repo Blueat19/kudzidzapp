@@ -1,20 +1,19 @@
 ================================================================================
-CPANEL READY FILES - Tanga Kudzidza App
+CPANEL READY FILES - Tanga Kudzidza App (NODE.JS BACKEND)
 ================================================================================
 Developer: SCW Digital | +263 78 709 0543
 ================================================================================
 
-This folder contains all the files you need to deploy to cPanel.
+This folder contains the backend starter files for cPanel Node.js deployment.
 
 FOLDER STRUCTURE:
 -----------------
 
 cpanel_ready_files/
 ├── backend/                    <- Upload to tangakudzidza_api folder
-│   ├── server.py               (Main FastAPI application)
-│   ├── requirements.txt        (Python dependencies)
-│   ├── passenger_wsgi.py       (Required for cPanel - main version)
-│   ├── passenger_wsgi_simple.py (Backup - use if main doesn't work)
+│   ├── app.js                  (Startup file for cPanel Node.js app)
+│   ├── server.js               (Main Express application)
+│   ├── package.json            (Node dependencies)
 │   └── .env.example            (Copy to .env and edit)
 │
 ├── frontend/                   <- Upload contents to public_html
@@ -27,11 +26,11 @@ DEPLOYMENT STEPS:
 -----------------
 
 1. BACKEND:
-   - Create Python App in cPanel (Setup Python App)
+   - Create Node.js App in cPanel (Setup Node.js App)
    - Upload all files from backend/ folder
-   - Rename .env.example to .env and update MONGO_URL
-   - Install dependencies: pip install -r requirements.txt
-   - Restart the Python app
+   - Rename .env.example to .env and update values
+   - Run npm install from cPanel Node app UI
+   - Restart the Node app
 
 2. FRONTEND:
    - Build locally: npx expo export --platform web
@@ -39,17 +38,18 @@ DEPLOYMENT STEPS:
    - Upload .htaccess from frontend/ folder to public_html
 
 3. DATABASE:
-   - Create free MongoDB Atlas account
-   - Get connection string and update .env
+   - Create MySQL database and user in cPanel
+   - Grant the user all privileges on the database
+   - Update .env with MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
 
 
 IMPORTANT NOTES:
 ----------------
 
-- The frontend files (dist folder) must be built locally first
-- Use MongoDB Atlas for database (free tier available)
-- Make sure to add your cPanel server IP to MongoDB whitelist
-- After uploading, always restart the Python app in cPanel
+- Frontend files (dist folder) must be built locally first
+- Use MySQL database credentials from cPanel
+- Keep your .env credentials private and restart app after updates
+- After uploading .env or code changes, restart the Node app
 
 
 FILES TO CREATE ON CPANEL:
